@@ -18,7 +18,7 @@ int FAN_PIN = 11;
 int BUZZER = 13;
 int LED_YELLOW = 9;
 int LED_GREEN = 10;
-bool wait = false;
+bool wait = true;
 
 void setup()
 {
@@ -42,14 +42,8 @@ void loop()
     //Perform data analytics on locally
     //turn off/on actuators, Green led indicates it is based on local sensor
     actOnWeather(DHT.temperature, DHT.humidity, FAN_PIN, BUZZER, LED_GREEN, true);
+    wait = true;
   }
-  //Now is the turn of the weather API
-  wait = true;
-
-
-
-  //Delay 30 secs
-  delay(30000);
 
   //Get data from remote weather API
   if (Serial.available() > 0) {

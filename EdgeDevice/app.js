@@ -5,9 +5,8 @@ const SerialPort = require('serialport');
 const Readline = require('@serialport/parser-readline');
 
 
-const port = new SerialPort('/dev/COM3', { baudRate: 115200 });
+const port = new SerialPort('COM3', { baudRate: 115200 });
 
-const eventEmitter = new events.EventEmitter();
 
 port.on('error', function (err) {
     console.log('Error: ', err.message)
@@ -53,28 +52,20 @@ function requestAPI() {
                     apiResponse.sunrise, apiResponse.sunset];
 
                     //asycn insert
-                    sql.insert(insertInto, fields);
-
-                    // wait 3 sec until async operation is done
-                    setTimeout(() => {
-                        if (sql.affectedRows == 1) {
+                    sql.insert(insertInto, fields, (err, affectedRows)=>{
+                        if (affectedRows == 1) {
                             console.log("Getting weather from api: " + apiResponse.temperature + " humidity: "
                                 + apiResponse.humidity + " description: " + apiResponse.description);
-                            console.log("requestAPI: sql affected rows: " + sql.affectedRows);
+                            console.log("requestAPI: sql affected rows: " + affectedRows);
+
                             //Write temperature and humidity to Arduino
                             port.write(apiResponse.temperature + "," + apiResponse.humidity, function (err) {
                                 if (err) {
                                     return console.log('Error on write: ', err.message)
                                 }
-
-
                             });
-
-
                         }
-
-                    }, 3000)
-
+                    });
                 }
             }
         }).catch((err) => console.log(err));
@@ -115,17 +106,13 @@ function listenToArduino() {
         if (description != null && typeof description != 'undefined' &&
             description != null && typeof description != 'undefined' &&
             description != null && typeof description != 'undefined') {
-            sql.insert(insertInto, fields);
-
-            // wait 3 sec until async operation is done
-            setTimeout(() => {
-                if (sql.affectedRows == 1) {
-                    //Emit requestAPI so the
-                    eventEmitter.emit('requestAPI');
-                    console.log("listenToEdge: sql affected rows: " + sql.affectedRows);
+            sql.insert(insertInto, fields, (err, affectedRows) =>{
+            
+                if (affectedRows == 1) {
+                    console.log("listenToEdge: sql affected rows: " + affectedRows);
                 }
 
-            }, 3000);
+            });
         } else {
             console.log("ERROR: fields are empty");
         }
@@ -147,13 +134,11 @@ function isResponseValid(response) {
     return false;
 }
 
-eventEmitter.on('requestAPI', () => {
-
-    requestAPI();
-
-});
 
 
-listenToArduino();
+module.exports = {
+    requestAPI,
+    listenToArduino
+}
 
 

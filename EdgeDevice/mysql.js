@@ -36,7 +36,7 @@ class MySql {
         }
     }
 
-    insert(insertInto, fields) {
+    insert(insertInto, fields, callback) {
         this.createConnection();
 
 
@@ -55,7 +55,10 @@ class MySql {
                 try{
                     if (results.affectedRows == 1) {
                         self.affectedRows = results.affectedRows;
+                        callback(null,  results.affectedRows);
                         eventEmitter.emit('finished');
+                    }else{
+                        callback(null, 0);
                     }
                  
 
@@ -85,42 +88,83 @@ class MySql {
 
     }
 
-    selectAll(table) {
+
+    selectAll(table, callback){
         this.createConnection();
 
-        this.rows = "";
-        let self = this;
+        let self= this;
+
         let eventEmitter = new events.EventEmitter();
 
         try{
 
             this.connection.query('SELECT * FROM ' + table, (error, results, fields) => {
                 if (error) {
+                    callback(error, null);
+                    eventEmitter.emit('finished');
                     throw error;
                 }
     
-              
-    
+                  
                 if (results.length > 0){
-                    self.rows = results;
                     eventEmitter.emit('finished');
+                    return callback(error, results);
                 }
-    
+
+                
+                eventEmitter.emit('finished');
+                return callback(null, null);
               
-    
-            });
-    
-            eventEmitter.on('finished', () => {
-    
-                self.endConnection();
     
             });
 
+            eventEmitter.on('finished', () => {
+
+                self.endConnection();
+    
+            });
+  
         }catch(e){
             console.log(e.message);
         }
-     
     }
+
+    // selectAll(table) {
+    //     this.createConnection();
+
+    //     this.rows = "";
+    //     let self = this;
+    //     let eventEmitter = new events.EventEmitter();
+
+    //     try{
+
+    //         this.connection.query('SELECT * FROM ' + table, (error, results, fields) => {
+    //             if (error) {
+    //                 throw error;
+    //             }
+    
+              
+    
+    //             if (results.length > 0){
+    //                 self.rows = results;
+    //                 eventEmitter.emit('finished');
+    //             }
+    
+              
+    
+    //         });
+    
+    //         eventEmitter.on('finished', () => {
+    
+    //             self.endConnection();
+    
+    //         });
+
+    //     }catch(e){
+    //         console.log(e.message);
+    //     }
+     
+    // }
 
     generatePrepareStaement(fields) {
 
@@ -146,4 +190,4 @@ class MySql {
 module.exports = MySql;
 
 
-// connection.destroy();
+
